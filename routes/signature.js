@@ -27,15 +27,21 @@ const createVoucher = async(domain, nftContract,tokenId,amount,price,royalty,sta
 
     console.log(`hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii`);
 
-    const signer = new ethers.Wallet(private_key);
+    try{
+        const signer = new ethers.Wallet(`0x${private_key}`);
 
-    const signature = await signer._signTypedData(domain, types, voucher);
+        const signature = await signer._signTypedData(domain, types, voucher);
 
 
-    return {
-        ...voucher,
-        signature
+        return {
+            ...voucher,
+            signature
+        }
+    }catch(err){
+        console.log(err)
     }
+
+    
 }
 
 router.get('/api/v1/buyItem/:nftid',async (req,res)=>{
@@ -43,7 +49,7 @@ router.get('/api/v1/buyItem/:nftid',async (req,res)=>{
         const SIGNING_DOMAIN_NAME = "DiggDevelopment";
         const SIGNING_DOMAIN_Version = "1";
         const chainId = 80001;
-        const contractAddress = "0x012c0DA9ac8a1b1b064fE3E70c3c01e84bF4ea6a";
+        const contractAddress = "0xB8c8aCeA197fb341d6bb6Ad2E85DfB109d215C3d";
 
         const nftid = req.params.nftid;
 
@@ -56,10 +62,10 @@ router.get('/api/v1/buyItem/:nftid',async (req,res)=>{
 
         
 
-        const nftContract ="0xc0485a9560897Db35EcB552fb0B89FaBA4e83EB0" ;
+        const nftContract ="0xeD94F34a8F12027938cB16bd1F2Ab77d9127edCA" ;
         const tokenID = "1";
         const amount = "1";
-        const price = "0.001";
+        const price = ethers.utils.parseEther("0.001");
         const royalty= "2";
         const startTime = "1";
         const duration = "1";
@@ -71,7 +77,15 @@ router.get('/api/v1/buyItem/:nftid',async (req,res)=>{
 
         
         const voucher = await createVoucher(domain,nftContract,tokenID,amount,price,royalty,startTime,duration,minter,owner,buyer,minted,CollectionName);
+        let signature = voucher.signature;
+        signature = signature.substring(2);
+        const r= "0x"+signature.substring(0,64);
+        const s= "0x"+signature.substring(64,128);
+        const v= parseInt(signature.substring(128,130),16);
 
+        console.log(v, r, s);
+
+        console.log(`["${voucher.nftContract}","${voucher.tokenId}","${voucher.amount}","${voucher.price}","${voucher.royalty}","${voucher.startTime}","${voucher.duration}","${voucher.minter}","${voucher.owner}","${voucher.buyer}",${voucher.minted},"${voucher.CollectionName}","${voucher.signature}"]`)
         res.json(voucher);
 
 
@@ -81,7 +95,6 @@ router.get('/api/v1/buyItem/:nftid',async (req,res)=>{
 
 
 
-    res.send(`the item user looking to buy is :${req.params.nftid}`)
 });
 
 module.exports = router;
